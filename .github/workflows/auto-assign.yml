@@ -11,9 +11,16 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-    - name: 'Auto-assign issue'
-      uses: pozil/auto-assign-issue@v1
+    # pozil/auto-assign-issue@v1 reads only github.event.issue and throws on
+    # pull_request events. Issues and PRs share the issues assignees API.
+    - name: 'Auto-assign issue or PR'
+      uses: actions/github-script@v7
       with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          assignees: peytondsay
-          numOfAssignee: 1
+        script: |
+          const item = context.payload.issue || context.payload.pull_request;
+          await github.rest.issues.addAssignees({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: item.number,
+            assignees: ['peytondsay'],
+          });
